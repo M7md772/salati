@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111514">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="صلاتي">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>صلاتي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+/* Layout: dusk dashboard — sidebar (desktop) / bottom bar (phone), landscape hero, stat tiles, goal ring + week bars, prayer list, wird checklist */
+:root{
+  --bg:#111514; --surface:#181d1b; --surface2:#202623; --line:#29302d;
+  --fg:#e8ece9; --mut:#8c968f; --faint:#5d6862;
+  --accent:#72c093; --accent-soft:#1f3329; --accent-ink:#0d1a13;
+  --home:#7397c6; --home-soft:#1e2938; --late:#c89b6a; --late-soft:#33281d; --missed:#c97a70; --missed-soft:#352220;
+  --star:#e2b85a; --star-soft:#352d1a; --violet:#8f8bc0; --violet-soft:#26253a;
+  --f-body:'IBM Plex Sans Arabic',system-ui,'Segoe UI',Tahoma,sans-serif;
+  --f-quran:'Amiri','Traditional Arabic',serif;
+  --r:18px; color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#f1f3ef; --surface:#ffffff; --surface2:#eef1ec; --line:#dfe4dd;
+  --fg:#18201c; --mut:#65706a; --faint:#a3aca6;
+  --accent:#3b8a5e; --accent-soft:#e2efe6; --accent-ink:#ffffff;
+  --home:#4c74a8; --home-soft:#e5ecf6; --late:#a87536; --late-soft:#f5ebdd; --missed:#b65a4f; --missed-soft:#f6e3e0;
+  --star:#b8862a; --star-soft:#f6ecd6; --violet:#6a65a3; --violet-soft:#ebeaf5; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#f1f3ef; --surface:#ffffff; --surface2:#eef1ec; --line:#dfe4dd;
+  --fg:#18201c; --mut:#65706a; --faint:#a3aca6;
+  --accent:#3b8a5e; --accent-soft:#e2efe6; --accent-ink:#ffffff;
+  --home:#4c74a8; --home-soft:#e5ecf6; --late:#a87536; --late-soft:#f5ebdd; --missed:#b65a4f; --missed-soft:#f6e3e0;
+  --star:#b8862a; --star-soft:#f6ecd6; --violet:#6a65a3; --violet-soft:#ebeaf5; color-scheme:light}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--f-body);font-size:14.5px;line-height:1.6;min-height:100vh;-webkit-text-size-adjust:100%}
+button{touch-action:manipulation}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{display:block}
+#bar{position:fixed;top:0;left:0;right:0;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:right;transition:transform .4s;z-index:50}
+#bar.on{transform:scaleX(.85);transition:transform 2s ease-out}
+
+/* shell */
+.shell{display:grid;grid-template-columns:1fr;min-height:100vh}
+.side{display:none}
+.main{min-width:0;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(92px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px;max-width:1180px;width:100%;margin:0 auto}
+@media (min-width:900px){
+  .shell{grid-template-columns:248px 1fr}
+  .side{display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;background:var(--surface);border-left:1px solid var(--line);padding:22px 16px}
+  .main{padding:22px 26px 32px}
+  .bnav{display:none!important}
+}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;padding:0 10px 18px}
+.logo svg{width:28px;height:28px;color:var(--accent)}
+.side .nv{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;background:none;border:1px solid transparent;color:var(--mut);text-align:right;font-size:15px}
+.side .nv svg{width:20px;height:20px}
+.side .nv:hover{color:var(--fg);background:var(--surface2)}
+.side .nv.on{color:var(--fg);background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 25%,transparent)}
+.side .nv.on svg{color:var(--accent)}
+.side .sp{flex:1}
+.prof{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line);padding:16px 6px 0}
+.av{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:17px;color:#fff;background:linear-gradient(160deg,#4f6b5d,#2c3d35 60%,#c89b6a);position:relative}
+.av.gold{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--star)}
+.prof b{display:flex;align-items:center;gap:6px;font-size:15px}
+.prof span{font-size:12px;color:var(--mut)}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top .hi{display:flex;align-items:center;gap:12px;min-width:0}
+.top .hi .av{width:38px;height:38px;font-size:15px}
+.top .hi b{display:flex;align-items:center;gap:6px;font-size:16px}
+.top .hi span{font-size:12px;color:var(--mut)}
+.date{display:flex;align-items:center;gap:10px;text-align:left}
+.date svg{width:20px;height:20px;color:var(--mut);flex:none}
+.date b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap}
+.date span{display:block;font-size:12px;color:var(--mut);white-space:nowrap}
+@media (min-width:900px){.top .hi .av{display:none}}
+
+/* badge */
+.badge{display:inline-flex;align-items:center;gap:3px;background:var(--star-soft);color:var(--star);border-radius:99px;padding:1px 8px 1px 7px;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.6}
+.badge svg{width:12px;height:12px}
+
+/* hero */
+.hero{position:relative;border-radius:var(--r);overflow:hidden;min-height:150px;display:flex;align-items:center;background:#1b2420}
+.hero svg.art{position:absolute;inset:0;width:100%;height:100%}
+.hero .q{position:relative;padding:20px 24px;max-width:440px;color:#f3efe6}
+.hero .q p{font-family:var(--f-quran);font-size:23px;line-height:1.7;text-wrap:balance;text-shadow:0 1px 12px rgba(0,0,0,.35)}
+.hero .q small{display:block;margin-top:6px;font-size:12px;color:#d9cdb8;opacity:.85}
+.hero .q i{display:block;width:44px;height:2px;background:#c89b6a;margin-top:12px;border-radius:2px}
+@media (min-width:900px){.hero{min-height:190px}.hero .q{padding:28px 34px}.hero .q p{font-size:27px}}
+
+/* stat tiles */
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (min-width:900px){.stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:12px;min-width:0}
+.tile .ti{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--c2);color:var(--c)}
+.tile .ti svg{width:20px;height:20px}
+.tile b{display:block;font-size:24px;line-height:1.15;font-variant-numeric:tabular-nums}
+.tile b small{font-size:13px;color:var(--mut);font-weight:500}
+.tile span{display:block;font-size:12.5px;color:var(--mut)}
+.tile em{display:block;font-style:normal;font-size:12px;color:var(--c);margin-top:2px}
+
+/* panels */
+.grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media (min-width:900px){.grid.two{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ph h2{font-size:16px;font-weight:600}
+.ph .lnk{font-size:12.5px}
+.lnk{color:var(--accent);text-decoration:none;background:none;border:none;padding:0;font-size:12.5px}
+.lnk:hover{text-decoration:underline}
+.muted{color:var(--mut);font-size:12.5px}
+
+/* goal */
+.goal{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.ring{position:relative;width:132px;height:132px;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .tr{stroke:var(--surface2)}
+.ring .pr{stroke:var(--accent);transition:stroke-dashoffset .6s ease}
+.ring.full .pr{stroke:var(--star)}
+.ring .c{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .c b{font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+.ring .c span{font-size:11.5px;color:var(--mut);margin-top:4px}
+.gtx{flex:1;min-width:170px}
+.gtx .big{font-size:15px;font-weight:600;line-height:1.5}
+.gtx .big b{color:var(--accent);font-size:20px;font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:var(--accent-soft);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);border-radius:99px;padding:4px 12px;font-size:12.5px}
+.pill.gold{background:var(--star-soft);color:var(--star);border-color:color-mix(in srgb,var(--star) 30%,transparent)}
+.todo{margin-top:10px;display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--mut)}
+.todo span{display:flex;justify-content:space-between;gap:8px}
+.todo em{font-style:normal;color:var(--fg);font-variant-numeric:tabular-nums}
+.week{display:grid;grid-template-columns:28px repeat(7,1fr);gap:6px;align-items:end;height:150px;margin-top:16px;padding-top:6px;border-top:1px solid var(--line)}
+.week .ax{height:118px;display:flex;flex-direction:column;justify-content:space-between;font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums;text-align:left;align-self:start;margin-top:6px}
+.week .col{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.week .b{width:10px;border-radius:99px;background:color-mix(in srgb,var(--accent) 55%,var(--surface2));min-height:4px}
+.week .col.td .b{background:var(--accent)}
+.week .col.full .b{background:var(--star)}
+.week .col span{font-size:10.5px;color:var(--mut);white-space:nowrap}
+.week .track{height:118px;display:flex;align-items:flex-end}
+
+/* prayers list */
+.prl{display:flex;flex-direction:column}
+.pri{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.pri:last-child{border-bottom:none;padding-bottom:2px}
+.pri:first-child{padding-top:2px}
+.cc{width:28px;height:28px;border-radius:50%;border:1.6px solid var(--faint);display:grid;place-items:center;grid-row:span 2;color:var(--accent-ink)}
+.cc svg{width:15px;height:15px}
+.cc.mosque{background:var(--accent);border-color:var(--accent)}
+.cc.home{background:var(--home);border-color:var(--home)}
+.cc.late{background:var(--late);border-color:var(--late)}
+.cc.missed{background:var(--missed);border-color:var(--missed)}
+.prt{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.prt b{font-weight:600;font-size:15px}
+.prt span{color:var(--mut);font-size:12.5px;font-variant-numeric:tabular-nums}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{background:var(--surface2);border:1px solid transparent;border-radius:99px;padding:7px 13px;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
+.seg button:hover{color:var(--fg);border-color:var(--line)}
+.seg button.on.mosque{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.seg button.on.home{background:var(--home-soft);color:var(--home);border-color:color-mix(in srgb,var(--home) 40%,transparent)}
+.seg button.on.late{background:var(--late-soft);color:var(--late);border-color:color-mix(in srgb,var(--late) 40%,transparent)}
+.seg button.on.missed{background:var(--missed-soft);color:var(--missed);border-color:color-mix(in srgb,var(--missed) 40%,transparent)}
+.seg button.on{font-weight:600}
+.seg .kb{border-style:dashed;border-color:var(--line)}
+.seg .kb.on{background:var(--star-soft);color:var(--star);border:1px solid color-mix(in srgb,var(--star) 40%,transparent)}
+.dnav{display:flex;align-items:center;gap:4px}
+.dnav button{background:var(--surface2);border:none;border-radius:10px;width:38px;height:34px;display:grid;place-items:center;color:var(--fg)}
+.dnav button:disabled{opacity:.3;cursor:default}
+.dnav button svg{width:16px;height:16px}
+.dnav span{font-size:12px;color:var(--mut);padding:0 6px}
+
+/* wird checklist */
+.wl{display:flex;flex-direction:column}
+.wi{padding:11px 0;border-bottom:1px solid var(--line)}
+.wi:last-child{border-bottom:none;padding-bottom:0}
+.wi:first-child{padding-top:0}
+.wr{display:flex;align-items:center;gap:12px}
+.ck{width:34px;height:34px;border-radius:50%;border:1.6px solid var(--faint);background:none;display:grid;place-items:center;flex:none;color:var(--accent-ink);transition:all .15s}
+.ck:hover{border-color:var(--accent)}
+.ck.on{background:var(--accent);border-color:var(--accent)}
+.ck svg{width:15px;height:15px}
+.wt{flex:1;min-width:0}
+.wt b{display:block;font-weight:500;font-size:14.5px}
+.wi.done .wt b{color:var(--mut)}
+.wt span{font-size:12px;color:var(--mut)}
+.wp{font-size:12.5px;color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+.zk{margin-top:10px;background:var(--surface2);border-radius:12px;padding:2px 14px;max-height:60vh;overflow:auto}
+.zi{padding:14px 0;border-bottom:1px solid var(--line)}
+.zi:last-child{border:none}
+.zi .nt{color:var(--accent);font-size:12px;font-weight:600;margin-bottom:4px}
+.zi .zt{font-family:var(--f-quran);font-size:20px;line-height:2.05;white-space:pre-line}
+.zi .zn{display:inline-block;margin-top:6px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:0 10px;font-size:12px;color:var(--mut)}
+
+/* leaderboard */
+.lb{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.lb:last-child{border:none;padding-bottom:0}
+.lb:first-child{padding-top:0}
+.lb .rk{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface2);font-weight:700;font-size:13px;flex:none;font-variant-numeric:tabular-nums}
+.lb.r1 .rk{background:var(--star-soft);color:var(--star)}
+.lb .nm{flex:1;min-width:0}
+.lb .nm b{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:600}
+.lb .nm span{display:block;color:var(--mut);font-size:12px}
+.lb .pts{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.lb .bar{height:4px;border-radius:99px;background:var(--surface2);margin-top:6px;overflow:hidden}
+.lb .bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.me-tag{font-size:10.5px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:0 8px}
+.legend-star{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--mut)}
+
+/* month */
+.split{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--surface2);gap:2px;margin-bottom:14px}
+.split i{display:block;height:100%}
+.ms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mt{background:var(--surface2);border-radius:12px;padding:10px 12px}
+.mt .k{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
+.mt .k i{width:7px;height:7px;border-radius:50%}
+.mt .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.mt .v small{font-size:12px;color:var(--mut);font-weight:500;margin-inline-start:4px}
+.li{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.li:last-child{border:none;padding-bottom:0}
+.li span{min-width:0}
+.li em{font-style:normal;font-weight:600;font-variant-numeric:tabular-nums}
+.li small{display:block;color:var(--mut);font-size:12px}
+.prog{height:6px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.empty{text-align:center;color:var(--mut);padding:30px 10px}
+.why{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.7}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mut)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:7px;height:7px;border-radius:50%}
+
+/* forms */
+label{display:block;font-size:13px;color:var(--mut);margin:14px 2px 6px}
+.panel label:first-of-type{margin-top:0}
+input,select{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:11px 12px;outline:none;font-size:16px}
+input:focus,select:focus{border-color:var(--accent)}
+input:disabled{opacity:.6}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{width:100%;margin-top:4px;background:var(--accent);color:var(--accent-ink);border:none;border-radius:13px;padding:12px;font-weight:600;font-size:15px}
+.btn.ghost{background:transparent;color:var(--mut);border:1px solid var(--line)}
+.hint{color:var(--mut);font-size:12px;margin-top:8px}
+.pcard{display:flex;align-items:center;gap:14px}
+.pcard .av{width:56px;height:56px;font-size:22px}
+.pcard b{display:flex;align-items:center;gap:8px;font-size:18px;flex-wrap:wrap}
+
+/* bottom nav (phone) */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));z-index:20;display:grid;grid-template-columns:repeat(5,1fr)}
+.bnav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--mut);padding:5px 0}
+.bnav button svg{width:21px;height:21px}
+.bnav button.on{color:var(--accent);font-weight:600}
+#toast{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom,0px));left:50%;transform:translate(-50%,12px);background:var(--fg);color:var(--bg);padding:9px 18px;border-radius:99px;font-size:14px;opacity:0;transition:all .2s;pointer-events:none;z-index:60;white-space:nowrap}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (min-width:900px){#toast{bottom:28px}}
+
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.login .box{width:100%;max-width:360px}
+.login .logo{padding:0 0 14px}
+.login p{color:var(--mut);font-size:14px;margin-bottom:10px}
+.login .btn{margin-top:18px}
+.err{color:var(--missed);font-size:13px;margin-top:12px;min-height:18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="app"><div class="login"><div class="box"><p>جاري التحميل…</p></div></div></div>
+<div id="toast" role="status"></div>
+<script>
+window.onerror=function(m,s,l){var a=document.getElementById('app');if(a)a.innerHTML='<div class="login"><div class="box"><p>صار خطأ: '+String(m).replace(/</g,'&lt;')+' (سطر '+l+')</p></div></div>'};
+</script>
+<script>
+(function(){
+/* ملاحظة: Apps Script يعتبر الشرطتين المائلتين بداية تعليق ويحذف باقي السطر، فلا نكتبها داخل السكربت */
+const QURL='https:'+'/'+'/quran.com/page/';
+const $=s=>document.querySelector(s);
+const API='https://script.google.com/macros/s/AKfycbwu2VZUkFRPaT3kDXe8ajdwOmIMGIJQ0UqnBzi_bjUbFKfFYSKRMb_d8CTtyt-nm072XQ/exec';
+const AMAP={apiLogin:'login',apiState:'state',apiLog:'log',apiSaveSettings:'save'};
+async function run(f,...a){
+  const r=await fetch(API+'?api='+AMAP[f]+'&p='+encodeURIComponent(JSON.stringify(a)),{redirect:'follow'});
+  const j=await r.json();
+  if(!j.ok)throw new Error(j.error);
+  return j.data;
+}
+const STS={mosque:'بالمسجد',home:'بالبيت',late:'متأخر',missed:'فاتتني'};
+const STC={mosque:'var(--accent)',home:'var(--home)',late:'var(--late)',missed:'var(--missed)'};
+const PR=['fajr','dhuhr','asr','maghrib','isha'];
+const ZK={morning:'أذكار الصباح',evening:'أذكار المساء',sleep:'أذكار النوم'};
+const TK={morning:'أذكار الصباح',evening:'أذكار المساء',sleep:'أذكار النوم',quran:'ورد القرآن',witr:'ركعة الوتر'};
+const QUOTES=[
+  ['وَفِي ذَٰلِكَ فَلْيَتَنَافَسِ الْمُتَنَافِسُونَ','سورة المطففين ٢٦'],
+  ['أَحَبُّ الْأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ','متفق عليه'],
+  ['حَافِظُوا عَلَى الصَّلَوَاتِ وَالصَّلَاةِ الْوُسْطَىٰ','سورة البقرة ٢٣٨'],
+  ['صَلَاةُ الْجَمَاعَةِ أَفْضَلُ مِنْ صَلَاةِ الْفَذِّ بِسَبْعٍ وَعِشْرِينَ دَرَجَةً','متفق عليه'],
+  ['فَاذْكُرُونِي أَذْكُرْكُمْ','سورة البقرة ١٥٢'],
+  ['إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَّوْقُوتًا','سورة النساء ١٠٣']
+];
+const I=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICON={
+  today:I('<path d="M4 10.5L12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/>'),
+  month:I('<path d="M4 19h16M7 16V10M12 16V6M17 16v-4"/>'),
+  board:I('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 6h3a3 3 0 0 1-3 4M7 6H4a3 3 0 0 0 3 4"/>'),
+  arch:I('<rect x="3.5" y="4" width="17" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>'),
+  set:I('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'),
+  cal:I('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
+  leaf:I('<path d="M12 21V11M12 11c0-4 2.5-7 7-8 0 4.5-2.5 8-7 8zM12 14c0-3.5-2.2-6-6.5-6.8C5.5 11 7.7 14 12 14z"/>'),
+  check:I('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  x:I('<path d="M7 7l10 10M17 7L7 17"/>'),
+  clock:I('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+  mosque:I('<path d="M12 3c2.5 2 4 4.2 4 6.5a4 4 0 0 1-8 0C8 7.2 9.5 5 12 3zM5 21v-6a7 7 0 0 1 14 0v6M3 21h18"/>'),
+  flame:I('<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-4 3.3-5.6 3.8-9.8 2.7 1.6 4 4 4.2 6 .9-.6 1.6-1.6 1.8-3 1.9 1.6 3.2 4 3.2 6.8 0 3.6-2.6 6.2-6.5 6.2z"/>'),
+  target:I('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>'),
+  prev:I('<path d="M9 6l6 6-6 6"/>'),next:I('<path d="M15 6l-6 6 6 6"/>')
+};
+const STAR='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8l2.7 5.7 6.2.8-4.6 4.3 1.2 6.2L12 16.8l-5.5 3 1.2-6.2L3.1 9.3l6.2-.8z"/></svg>';
+let T=null,S=null,tab='today',busy=false,open={};
+
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function t12(h){if(!h)return'';const[a,b]=h.split(':').map(Number);return(a%12||12)+':'+String(b).padStart(2,'0')+(a<12?' ص':' م')}
+function addD(ymd,n){const[y,m,d]=ymd.split('-').map(Number);return new Date(Date.UTC(y,m-1,d+n)).toISOString().slice(0,10)}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2400)}
+function errMsg(e){return String((e&&e.message)||e||'').replace(/^Error:\s*/,'')}
+function tA(n){return n===2?'مرتين':n<=10?n+' مرات':n+' مرة'}
+function badge(n,title){return n?`<span class="badge" title="${title||'أيام كاملة هذا الشهر'}">${STAR}${n}</span>`:''}
+function initial(n){return esc(String(n||'؟').trim().charAt(0))}
+
+async function call(f,...a){
+  if(busy)return null; busy=true; $('#bar').classList.add('on');
+  try{return await run(f,T,...a)}
+  catch(e){const m=errMsg(e);if(m.includes('AUTH')){logout();toast('سجّل دخولك من جديد')}else toast(m);throw e}
+  finally{busy=false;$('#bar').classList.remove('on')}
+}
+function urlToken(){try{return Promise.resolve(new URLSearchParams(location.search).get('t'))}catch(e){return Promise.resolve(null)}}
+async function boot(){
+  const ut=await urlToken(); if(ut){T=ut;ls('salati_t',ut)} else T=ls('salati_t');
+  if(!T)return showLogin();
+  try{S=await call('apiState',null);render()}catch(e){if(!T)showLogin()}
+}
+function showLogin(){
+  $('#app').innerHTML=`<div class="login"><form class="box" onsubmit="login(event)">
+  <div class="logo">${ICON.leaf}صلاتي</div><p>حافظ على صلاتك، وتنافس على الخير.</p>
+  <label for="u">اسم الدخول</label><input id="u" autocomplete="username" autocapitalize="none" dir="ltr" required>
+  <label for="p">الرمز</label><input id="p" type="password" inputmode="numeric" autocomplete="current-password" dir="ltr" required>
+  <button class="btn" type="submit">دخول</button>
+  <div class="err" id="err"></div>
+  <p class="hint">بيانات الدخول تجيك من البوت. أرسل له ‎/app</p></form></div>`;
+}
+async function login(ev){
+  ev.preventDefault(); $('#err').textContent='';
+  try{const r=await run('apiLogin',$('#u').value,$('#p').value);T=r.token;ls('salati_t',T);S=await call('apiState',null);render()}
+  catch(e){$('#err').textContent=errMsg(e)}
+}
+function logout(){ls('salati_t',null);T=null;S=null;showLogin()}
+
+const NAVS=[['today','الرئيسية'],['month','الشهر'],['board','الترتيب'],['arch','الأرشيف'],['set','الإعدادات']];
+function render(){
+  if(!S)return;
+  const g=S.goal, full=g.dayPoints>=g.dayMax, perf=S.month.perfect||0;
+  $('#app').innerHTML=`<div class="shell">
+  <aside class="side"><div class="logo">${ICON.leaf}صلاتي</div>
+    ${NAVS.map(n=>`<button class="nv ${tab===n[0]?'on':''}" onclick="go('${n[0]}')">${ICON[n[0]]}${n[1]}</button>`).join('')}
+    <div class="sp"></div>
+    <div class="prof"><div class="av ${full?'gold':''}">${initial(S.user.name)}</div><div><b>${esc(S.user.name)} ${badge(perf)}</b><span>📍 ${esc(S.user.cityAr)}</span></div></div>
+  </aside>
+  <div class="main">
+    <div class="top">
+      <div class="hi"><div class="av ${full?'gold':''}">${initial(S.user.name)}</div><div><b>أهلاً ${esc(S.user.name)} ${badge(perf)}</b><span>${esc(S.date.dow)} · ${esc(S.user.cityAr)}</span></div></div>
+      <div class="date"><div><b>${esc(S.date.hijri)}</b><span>${esc(S.date.greg)}</span></div>${ICON.cal}</div>
+    </div>
+    ${({today:vToday,month:vMonth,board:vBoard,arch:vArch,set:vSet})[tab]()}
+  </div></div>
+  <nav class="bnav">${NAVS.map(n=>`<button class="${tab===n[0]?'on':''}" onclick="go('${n[0]}')">${ICON[n[0]]}${n[1]}</button>`).join('')}</nav>`;
+}
+function go(t){tab=t;render();scrollTo(0,0)}
+
+function hero(){
+  const n=Math.floor(Date.parse(S.ymd)/864e5), q=n%7===0?QUOTES[0]:QUOTES[n%QUOTES.length];
+  return `<section class="hero">
+  <svg class="art" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2a2f"/><stop offset=".55" stop-color="#4a4a4a"/><stop offset=".85" stop-color="#b9845a"/><stop offset="1" stop-color="#d9a273"/></linearGradient>
+    <linearGradient id="fog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9a273" stop-opacity=".35"/><stop offset="1" stop-color="#d9a273" stop-opacity="0"/></linearGradient>
+    <linearGradient id="shade" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#0d1311" stop-opacity=".75"/><stop offset=".55" stop-color="#0d1311" stop-opacity=".15"/><stop offset="1" stop-color="#0d1311" stop-opacity="0"/></linearGradient></defs>
+    <rect width="800" height="200" fill="url(#sky)"/>
+    <circle cx="190" cy="52" r="15" fill="#f1e2c4" opacity=".9"/><circle cx="198" cy="47" r="14" fill="#2b3536"/>
+    <g fill="#f1e2c4" opacity=".55"><circle cx="90" cy="30" r="1"/><circle cx="300" cy="22" r="1.2"/><circle cx="420" cy="40" r=".8"/><circle cx="520" cy="18" r="1"/><circle cx="660" cy="34" r=".9"/><circle cx="250" cy="70" r=".7"/></g>
+    <path d="M0 150 L80 118 L150 132 L240 92 L320 126 L400 104 L480 134 L560 98 L650 128 L730 110 L800 126 V200 H0Z" fill="#5c5650" opacity=".75"/>
+    <rect y="120" width="800" height="40" fill="url(#fog)"/>
+    <path d="M0 168 L70 140 L140 156 L210 128 L300 160 L380 136 L470 162 L560 132 L640 158 L720 140 L800 154 V200 H0Z" fill="#33393a"/>
+    <path d="M0 200 V178 L40 170 L60 160 L72 172 L110 176 L150 168 L190 178 L240 172 L300 182 L360 174 L420 184 L480 176 L540 182 L600 172 L640 160 L656 172 L700 176 L760 168 L800 174 V200Z" fill="#1d2422"/>
+    <rect width="800" height="200" fill="url(#shade)"/>
+  </svg>
+  <div class="q"><p>${q[0]}</p><small>${q[1]}</small><i></i></div></section>`;
+}
+
+function vToday(){
+  const e=S.entries,p=S.points,g=S.goal,m=S.month;
+  const pct=Math.min(100,Math.round(g.dayPoints*100/g.dayMax)), full=g.dayPoints>=g.dayMax, left=Math.max(0,g.dayMax-g.dayPoints);
+  const isToday=S.ymd===S.today;
+  const pend=[];
+  const prLeft=PR.filter(k=>{const s=(e['prayer|'+k]||{}).status;return s!=='mosque'}).length;
+  if(prLeft)pend.push(['صلوات بالمسجد',PR.reduce((a,k)=>{const s=(e['prayer|'+k]||{}).status;return a+(p.mosque-(s?p[s]:0))},0)]);
+  const zl=Object.keys(ZK).filter(z=>!e['zikr|'+z]).length; if(zl)pend.push([zl+' من الأذكار',zl*p.zikr]);
+  if(!e['quran|daily'])pend.push(['ورد القرآن',p.quran]);
+  if(!e['witr|witr'])pend.push(['الوتر',p.witr]);
+  const kl=PR.filter(k=>!e['kursi|'+k]).length; if(kl)pend.push(['آية الكرسي ×'+kl,kl*p.kursi]);
+  const C=2*Math.PI*54, off=C*(1-pct/100);
+  const wk=g.week, wmax=g.dayMax;
+  const me=S.board.find(x=>x.me);
+
+  let h=hero();
+  h+=`<div class="stats">
+    <div class="tile" style="--c:var(--accent);--c2:var(--accent-soft)"><div class="ti">${ICON.target}</div><div><b>${g.dayPoints}<small> / ${g.dayMax}</small></b><span>نقاط ${isToday?'اليوم':'هذا اليوم'}</span><em>${full?'يوم كامل':'باقي '+left}</em></div></div>
+    <div class="tile" style="--c:var(--late);--c2:var(--late-soft)"><div class="ti">${ICON.mosque}</div><div><b>${m.prayers.mosque}</b><span>بالمسجد هذا الشهر</span><em>${m.pct.mosque}% من الصلوات</em></div></div>
+    <div class="tile" style="--c:var(--home);--c2:var(--home-soft)"><div class="ti">${ICON.flame}</div><div><b>${g.streak}</b><span>أيام متتالية</span><em>الخمس في وقتها</em></div></div>
+    <div class="tile" style="--c:var(--star);--c2:var(--star-soft)"><div class="ti">${STAR.replace('<svg','<svg width="20" height="20"')}</div><div><b>${m.perfect||0}</b><span>أيام كاملة</span><em>${me&&S.board.length>1?'المركز '+me.rank+' من '+S.board.length:'هذا الشهر'}</em></div></div>
+  </div>`;
+
+  h+=`<div class="grid two">
+  <section class="panel"><div class="ph"><h2>هدف ${isToday?'اليوم':'اليوم المختار'}</h2><span class="muted">${g.dayMax} نقطة = يوم كامل</span></div>
+    <div class="goal"><div class="ring ${full?'full':''}"><svg viewBox="0 0 120 120"><circle class="tr" cx="60" cy="60" r="54" fill="none" stroke-width="10"/><circle class="pr" cx="60" cy="60" r="54" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}"/></svg>
+      <div class="c"><b>${pct}%</b><span>${g.dayPoints} نقطة</span></div></div>
+      <div class="gtx">${full
+        ?`<div class="big">ما شاء الله، يومك كامل</div><span class="pill gold">${STAR.replace('<svg','<svg width="13" height="13"')} انضافت نجمة جنب اسمك</span>`
+        :`<div class="big">باقي لك <b>${left}</b> نقطة<br>وتكمّل يومك</div><div class="todo">${pend.map(x=>`<span>${x[0]}<em>+${x[1]}</em></span>`).join('')}</div>`}
+      </div></div>
+    <div class="week"><div class="ax"><span>100%</span><span>50%</span><span>0</span></div>
+      ${wk.map(d=>{const v=Math.min(100,d.points*100/wmax);return `<div class="col ${d.ymd===S.today?'td':''} ${d.points>=wmax?'full':''}" title="${d.dow}: ${d.points} نقطة"><div class="track"><div class="b" style="height:${Math.max(3,v*1.18)}px"></div></div><span>${d.dow.replace('ال','')}</span></div>`}).join('')}
+    </div>
+    <div class="muted" style="margin-top:6px">آخر ٧ أيام · النجمة الذهبية = يوم كامل</div>
+  </section>
+
+  <section class="panel"><div class="ph"><h2>صلوات ${isToday?'اليوم':'اليوم المختار'}</h2>
+    <div class="dnav"><button aria-label="اليوم السابق" onclick="day('${addD(S.ymd,-1)}')" ${S.ymd<=S.minDate?'disabled':''}>${ICON.prev}</button><span>${isToday?'اليوم':'يوم سابق'}</span><button aria-label="اليوم التالي" onclick="day('${addD(S.ymd,1)}')" ${S.ymd>=S.today?'disabled':''}>${ICON.next}</button></div></div>
+    <div class="prl">${PR.map(k=>{const cur=(e['prayer|'+k]||{}).status,kur=e['kursi|'+k];
+      return `<div class="pri"><div class="cc ${cur||''}">${cur?(cur==='missed'?ICON.x:cur==='late'?ICON.clock:ICON.check):''}</div>
+      <div class="prt"><b>${esc(S.names[k])}</b><span>${S.times?t12(S.times[k]):''}</span></div>
+      <div class="seg">${Object.keys(STS).map(s=>`<button class="${cur===s?'on '+s:''}" onclick="setP('${k}','${s}')">${STS[s]} +${p[s]}</button>`).join('')}
+      ${cur&&cur!=='missed'?`<button class="kb ${kur?'on':''}" onclick="tog('kursi','${k}')">${kur?'✓ ':''}آية الكرسي +${p.kursi}</button>`:''}</div></div>`}).join('')}
+    </div>
+    <button class="lnk" style="margin-top:12px" onclick="tgl('kursi')">${open.kursi?'إخفاء نص آية الكرسي':'عرض نص آية الكرسي'}</button>
+    ${open.kursi?`<div class="zk"><div class="zi"><div class="zt">${esc(S.kursi)}</div></div></div>`:''}
+  </section></div>`;
+
+  const q=e['quran|daily'], pg=q?q.note:S.user.quran_page, w=e['witr|witr'];
+  const row=(on,type,item,title,sub,pts,extra)=>`<div class="wi ${on?'done':''}"><div class="wr"><button class="ck ${on?'on':''}" aria-label="${title}" onclick="tog('${type}','${item}')">${on?ICON.check:''}</button>
+    <div class="wt"><b>${title}</b><span>${sub}</span></div><span class="wp">+${pts}</span></div>${extra||''}</div>`;
+  h+=`<div class="grid two">
+  <section class="panel"><div class="ph"><h2>الورد اليومي</h2><span class="muted">${Object.keys(ZK).filter(z=>e['zikr|'+z]).length+(q?1:0)+(w?1:0)} من 5</span></div><div class="wl">
+    ${Object.keys(ZK).map(z=>row(e['zikr|'+z],'zikr',z,ZK[z],(S.user[z]?'التذكير '+t12(S.user[z]):'التذكير متوقف')+` · <button class="lnk" onclick="tgl('${z}')">${open[z]?'إخفاء':'اقرأ الأذكار'}</button>`,p.zikr,
+      open[z]?`<div class="zk">${S.adhkar[z].map(x=>`<div class="zi">${x.note?`<div class="nt">${esc(x.note)}</div>`:''}<div class="zt">${esc(x.t)}</div>${x.n>1?`<span class="zn">${tA(x.n)}</span>`:''}</div>`).join('')}</div>`:'')).join('')}
+    ${row(q,'quran','daily','ورد القرآن',`الصفحة ${esc(pg)} من 604${S.user.khatmat?' · '+S.user.khatmat+' ختمة':''} · <a class="lnk" href="${QURL}${encodeURIComponent(pg)}" target="_blank" rel="noopener">افتح الصفحة</a>`,p.quran)}
+    ${row(w,'witr','witr','ركعة الوتر','قبل النوم، ما تاخذ منك ٥ دقايق',p.witr)}
+  </div></section>
+  <section class="panel"><div class="ph"><h2>الترتيب</h2><button class="lnk" onclick="go('board')">عرض الكل</button></div>${boardList(3)}</section>
+  </div>`;
+  return h;
+}
+function boardList(n){
+  if(!S.board.length)return `<div class="empty">ما فيه أحد بعد</div>`;
+  const top=S.board[0].total||1;
+  return S.board.slice(0,n||99).map(x=>`<div class="lb r${x.rank}"><div class="rk">${x.rank}</div>
+    <div class="nm"><b>${esc(x.name)} ${badge(x.perfect)} ${x.me?'<span class="me-tag">أنت</span>':''}</b><span>${x.mosque} بالمسجد (${x.mosquePct}%) · ${x.adhkar} ورد أذكار</span><div class="bar"><i style="width:${Math.round(x.total*100/top)}%"></i></div></div>
+    <div class="pts">${x.total}</div></div>`).join('');
+}
+function tgl(k){open[k]=!open[k];render()}
+async function day(d){try{const r=await call('apiState',d);if(r){S=r;render()}}catch(e){}}
+function afterLog(prev,neutral){
+  const g=S.goal, d=S.month.total-prev;
+  if(neutral)return toast(neutral);
+  if(g.dayPoints>=g.dayMax)return toast('يوم كامل! انضافت لك نجمة');
+  toast(`${d>=0?'+':''}${d} · باقي ${g.dayMax-g.dayPoints} لليوم الكامل`);
+}
+async function setP(k,s){
+  const cur=(S.entries['prayer|'+k]||{}).status, ns=cur===s?'none':s, b=S.month.total;
+  try{const r=await call('apiLog',S.ymd,'prayer',k,ns);if(!r)return;S=r;render();afterLog(b,ns==='none'?'تم الإلغاء':ns==='missed'?'الله يعوضك':null)}catch(e){}
+}
+async function tog(type,item){
+  const on=S.entries[type+'|'+item], b=S.month.total;
+  try{const r=await call('apiLog',S.ymd,type,item,on?'none':'done');if(!r)return;S=r;render();afterLog(b,on?'تم الإلغاء':null)}catch(e){}
+}
+
+function vMonth(){
+  const m=S.month,P=m.prayers,g=S.goal,keys=['mosque','home','late','missed'];
+  const mp=Math.min(100,Math.round(m.total*100/g.monthMax)), C=2*Math.PI*54;
+  return `<div class="stats">
+    <div class="tile" style="--c:var(--accent);--c2:var(--accent-soft)"><div class="ti">${ICON.target}</div><div><b>${m.total}</b><span>نقاط ${esc(S.monthLabel)}</span></div></div>
+    <div class="tile" style="--c:var(--star);--c2:var(--star-soft)"><div class="ti">${STAR.replace('<svg','<svg width="20" height="20"')}</div><div><b>${m.perfect||0}</b><span>أيام كاملة</span></div></div>
+    <div class="tile" style="--c:var(--home);--c2:var(--home-soft)"><div class="ti">${ICON.flame}</div><div><b>${g.streak}</b><span>أيام متتالية</span></div></div>
+    <div class="tile" style="--c:var(--violet);--c2:var(--violet-soft)"><div class="ti">${ICON.cal}</div><div><b>${g.dayOfMonth}<small> / ${g.monthLen}</small></b><span>يوم من الشهر</span></div></div>
+  </div>
+  <div class="grid two">
+  <section class="panel"><div class="ph"><h2>الشهر كامل</h2><span class="muted">الحد الأعلى ${g.monthMax}</span></div>
+    <div class="goal"><div class="ring"><svg viewBox="0 0 120 120"><circle class="tr" cx="60" cy="60" r="54" fill="none" stroke-width="10"/><circle class="pr" cx="60" cy="60" r="54" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-mp/100)}"/></svg><div class="c"><b>${mp}%</b><span>من الشهر</span></div></div>
+    <div class="gtx"><div class="big">باقي في الشهر <b>${Math.max(0,g.monthMax-m.total)}</b> نقطة ممكنة</div><div class="todo"><span>لو كمّلت كل الأيام الباقية<em>${m.total+(g.monthLen-g.dayOfMonth)*g.dayMax+Math.max(0,g.dayMax-g.dayPoints)}</em></span><span>معدّلك اليومي<em>${m.days?Math.round(m.total/m.days):0}</em></span></div></div></div>
+  </section>
+  <section class="panel"><div class="ph"><h2>الصلوات</h2><span class="muted">${P.count} صلاة</span></div>
+    <div class="split">${P.count?keys.map(s=>P[s]?`<i style="width:${m.pct[s]}%;background:${STC[s]}"></i>`:'').join(''):''}</div>
+    <div class="ms">${keys.map(s=>`<div class="mt"><span class="k"><i style="background:${STC[s]}"></i>${STS[s]}</span><span class="v">${P[s]}<small>${m.pct[s]}%</small></span></div>`).join('')}</div>
+    <div class="li" style="margin-top:8px"><span>صليتها في وقتها (مسجد + بيت)</span><em>${m.pct.onTime}%</em></div>
+  </section></div>
+  <section class="panel"><div class="ph"><h2>من وين جات النقاط</h2></div>
+    <div class="li"><span>الصلوات</span><em>${P.points}</em></div>
+    <div class="li"><span>الأذكار<small>صباح ${m.zikr.morning} · مساء ${m.zikr.evening} · نوم ${m.zikr.sleep}</small></span><em>${m.zikr.points}</em></div>
+    <div class="li"><span>ورد القرآن<small>${m.quran.count} وجه</small></span><em>${m.quran.points}</em></div>
+    <div class="li"><span>الوتر<small>${m.witr.count} ليلة</small></span><em>${m.witr.points}</em></div>
+    <div class="li"><span>آية الكرسي<small>${m.kursi.count} مرة</small></span><em>${m.kursi.points}</em></div>
+    <p class="hint">العداد يتصفّر أول كل شهر هجري، والحصاد ينحفظ في الأرشيف.</p>
+  </section>`;
+}
+function vBoard(){
+  return `<section class="panel"><div class="ph"><h2>ترتيب ${esc(S.monthLabel)}</h2></div>${boardList()}
+  <div class="legend-star">${badge(1,'')} النجمة وجنبها عدد الأيام اللي كمّل فيها الشخص النقاط كاملة (${S.goal.dayMax} نقطة)</div></section>`;
+}
+function vArch(){
+  if(!S.archive.length)return `<section class="panel"><div class="empty">الأرشيف فاضي.<br>أول حصاد يتسجّل نهاية الشهر الهجري.</div></section>`;
+  const keys=['mosque','home','late','missed'];
+  return `<div class="grid three">`+S.archive.map(a=>{
+    const me=a.rows.find(r=>r.me), w=a.rows[0];
+    let h=`<section class="panel"><div class="ph"><h2>${esc(a.label)}</h2><span class="muted">الأول: ${esc(w.name)}</span></div>`;
+    if(me){
+      h+=`<div class="split">${keys.map(s=>me[s]?`<i style="width:${me[s+'Pct']}%;background:${STC[s]}"></i>`:'').join('')}</div>
+      <div class="legend">${keys.map(s=>`<span><i style="background:${STC[s]}"></i>${STS[s]} ${me[s]} (${me[s+'Pct']}%)</span>`).join('')}</div>
+      <div class="li" style="margin-top:8px"><span>نقاطك · المركز ${me.rank} ${badge(me.perfect)}</span><em>${me.total}</em></div>
+      <div class="why">${esc(me.reasons)}</div>`;
+    }
+    h+=a.rows.filter(r=>!r.me).map(r=>`<div class="li"><span>${r.rank}. ${esc(r.name)} ${badge(r.perfect)}</span><em>${r.total}</em></div>`).join('');
+    return h+`</section>`;
+  }).join('')+`</div>`;
+}
+function vSet(){
+  const u=S.user, ci=S.cities.findIndex(c=>c[1]===u.city), full=S.goal.dayPoints>=S.goal.dayMax;
+  return `<section class="panel"><div class="pcard"><div class="av ${full?'gold':''}">${initial(u.name)}</div><div><b>${esc(u.name)} ${badge(S.month.perfect)}</b><span class="muted">@${esc(u.username)} · ${S.month.perfect||0} يوم كامل · ${S.goal.streak} يوم متتالي</span></div></div></section>
+  <form onsubmit="saveSet(event)" class="grid two">
+  <section class="panel"><div class="ph"><h2>الحساب والمدينة</h2></div>
+  <label for="s_name">الاسم الظاهر</label><input id="s_name" value="${esc(u.name)}">
+  <label for="s_pin">رمز جديد (اختياري)</label><input id="s_pin" inputmode="numeric" dir="ltr" placeholder="من ٤ إلى ٨ أرقام">
+  <label for="s_city">أوقات الصلاة حسب</label>
+  <select id="s_city" onchange="document.getElementById('oth').hidden=this.value!=='other'">
+  ${S.cities.map((c,i)=>`<option value="${i}" ${i===ci?'selected':''}>${esc(c[0])}</option>`).join('')}
+  <option value="other" ${ci<0?'selected':''}>مدينة أخرى…</option></select>
+  <div id="oth" ${ci<0?'':'hidden'}><div class="g2">
+  <div><label for="s_oc">City</label><input id="s_oc" dir="ltr" value="${ci<0?esc(u.city):''}" placeholder="Cairo"></div>
+  <div><label for="s_oco">Country</label><input id="s_oco" dir="ltr" value="${ci<0?esc(u.country):''}" placeholder="Egypt"></div></div></div>
+  <p class="hint">تذكير الصلاة يجيك مع الأذان حسب مدينتك.</p></section>
+  <section class="panel"><div class="ph"><h2>أوقات التذكير في تيليجرام</h2></div>
+  ${Object.keys(TK).map(k=>`<label for="s_${k}">${TK[k]}</label><input type="time" id="s_${k}" value="${esc(u[k])}">`).join('')}
+  <p class="hint">امسح الوقت إذا تبي توقف التذكير.</p></section>
+  <div style="display:flex;flex-direction:column;gap:10px"><button class="btn" type="submit">حفظ</button><button class="btn ghost" type="button" onclick="logout()">تسجيل خروج</button></div>
+  </form>
+  <section class="panel"><div class="ph"><h2>نظام النقاط</h2><span class="muted">اليوم الكامل = ${S.goal.dayMax}</span></div>
+  ${[['الصلاة بالمسجد',S.points.mosque],['الصلاة بالبيت',S.points.home],['الصلاة متأخرة',S.points.late],['صلاة فائتة',S.points.missed],['ورد أذكار (صباح، مساء، نوم)',S.points.zikr],['وجه من القرآن',S.points.quran],['الوتر',S.points.witr],['آية الكرسي بعد كل صلاة',S.points.kursi]].map(x=>`<div class="li"><span>${x[0]}</span><em>${x[1]}</em></div>`).join('')}
+  </section>`;
+}
+async function saveSet(ev){
+  ev.preventDefault();
+  const v=$('#s_city').value, s={name:$('#s_name').value,pin:$('#s_pin').value};
+  if(v==='other'){s.city=$('#s_oc').value.trim();s.country=$('#s_oco').value.trim();if(!s.city||!s.country)return toast('اكتب المدينة والدولة')}
+  else{s.city=S.cities[+v][1];s.country='Saudi Arabia'}
+  Object.keys(TK).forEach(k=>s[k]=$('#s_'+k).value);
+  try{const r=await call('apiSaveSettings',s);if(r){S=r;render();toast('تم الحفظ')}}catch(e){}
+}
+Object.assign(window,{login,logout,go,day,setP,tog,tgl,saveSet});
+boot();
+})();
+</script>
+</body>
+</html>
