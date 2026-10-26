@@ -290,7 +290,7 @@ async function run(f,...a){
   if(!j.ok)throw new Error(j.error);
   return j.data;
 }
-const STS={mosque:'بالمسجد',home:'بالبيت',late:'متأخر',missed:'فاتتني'};
+const STS={mosque:'بالمسجد',home:'بالبيت',late:'متأخر'};
 const STC={mosque:'var(--accent)',home:'var(--home)',late:'var(--late)',missed:'var(--missed)'};
 const PR=['fajr','dhuhr','asr','maghrib','isha'];
 const ZK={morning:'أذكار الصباح',evening:'أذكار المساء',sleep:'أذكار النوم'};
@@ -445,7 +445,7 @@ function vToday(){
 
   <section class="panel"><div class="ph"><h2>صلوات ${isToday?'اليوم':'اليوم المختار'}</h2>
     <div class="dnav"><button aria-label="اليوم السابق" onclick="day('${addD(S.ymd,-1)}')" ${S.ymd<=S.minDate?'disabled':''}>${ICON.prev}</button><span>${isToday?'اليوم':'يوم سابق'}</span><button aria-label="اليوم التالي" onclick="day('${addD(S.ymd,1)}')" ${S.ymd>=S.today?'disabled':''}>${ICON.next}</button></div></div>
-    <div class="prl">${PR.map(k=>{const cur=(e['prayer|'+k]||{}).status,kur=e['kursi|'+k];
+    <div class="prl">${PR.map(k=>{const cur0=(e['prayer|'+k]||{}).status,cur=cur0==='missed'?'late':cur0,kur=e['kursi|'+k];
       return `<div class="pri"><div class="cc ${cur||''}">${cur?(cur==='missed'?ICON.x:cur==='late'?ICON.clock:ICON.check):''}</div>
       <div class="prt"><b>${esc(S.names[k])}</b><span>${S.times?t12(S.times[k]):''}</span></div>
       <div class="seg">${Object.keys(STS).map(s=>`<button class="${cur===s?'on '+s:''}" onclick="setP('${k}','${s}')">${STS[s]} +${p[s]}</button>`).join('')}
@@ -490,7 +490,7 @@ function ptsFor(type,status){if(status==='none')return 0;return type==='prayer'?
 function applyLocal(type,item,status){
   const m=S.month, g=S.goal, key=type+'|'+item, old=S.entries[key];
   let delta=-(old?old.points:0);
-  if(type==='prayer'&&old){m.prayers[old.status]=Math.max(0,(m.prayers[old.status]||0)-1);m.prayers.count=Math.max(0,m.prayers.count-1);m.prayers.points-=old.points}
+  if(type==='prayer'&&old){const os=old.status==='missed'?'late':old.status;m.prayers[os]=Math.max(0,(m.prayers[os]||0)-1);m.prayers.count=Math.max(0,m.prayers.count-1);m.prayers.points-=old.points}
   if(type==='zikr'&&old){m.zikr[item]=Math.max(0,(m.zikr[item]||0)-1);m.zikr.count--;m.zikr.points-=old.points}
   if(['quran','witr','kursi'].includes(type)&&old){m[type].count--;m[type].points-=old.points}
   if(status==='none'){delete S.entries[key]}
@@ -524,7 +524,7 @@ function save(type,item,status,neutral){
 }
 function setP(k,s){
   const cur=(S.entries['prayer|'+k]||{}).status, ns=cur===s?'none':s;
-  save('prayer',k,ns,ns==='none'?'تم الإلغاء':ns==='missed'?'الله يعوضك':null);
+  save('prayer',k,ns,ns==='none'?'تم الإلغاء':null);
 }
 function tog(type,item){
   const on=S.entries[type+'|'+item];
@@ -532,7 +532,7 @@ function tog(type,item){
 }
 
 function vMonth(){
-  const m=S.month,P=m.prayers,g=S.goal,keys=['mosque','home','late','missed'];
+  const m=S.month,P=m.prayers,g=S.goal,keys=['mosque','home','late'];
   const mp=Math.min(100,Math.round(m.total*100/g.monthMax)), C=2*Math.PI*54;
   return `<div class="stats">
     <div class="tile" style="--c:var(--accent);--c2:var(--accent-soft)"><div class="ti">${ICON.target}</div><div><b>${m.total}</b><span>نقاط ${esc(S.monthLabel)}</span></div></div>
@@ -565,7 +565,7 @@ function vBoard(){
 }
 function vArch(){
   if(!S.archive.length)return `<section class="panel"><div class="empty">الأرشيف فاضي.<br>أول حصاد يتسجّل نهاية الشهر الهجري.</div></section>`;
-  const keys=['mosque','home','late','missed'];
+  const keys=['mosque','home','late'];
   return `<div class="grid three">`+S.archive.map(a=>{
     const me=a.rows.find(r=>r.me), w=a.rows[0];
     let h=`<section class="panel"><div class="ph"><h2>${esc(a.label)}</h2><span class="muted">الأول: ${esc(w.name)}</span></div>`;
@@ -600,9 +600,9 @@ function vSet(){
   <div style="display:flex;flex-direction:column;gap:10px"><button class="btn" type="submit">حفظ</button><button class="btn ghost" type="button" onclick="logout()">تسجيل خروج</button></div>
   </form>
   <section class="panel"><div class="ph"><h2>نظام النقاط</h2><span class="muted">اليوم الكامل = ${S.goal.dayMax}</span></div>
-  ${[['الصلاة بالمسجد',S.points.mosque],['الصلاة بالبيت',S.points.home],['الصلاة متأخرة',S.points.late],['صلاة فائتة',S.points.missed],['ورد أذكار (صباح، مساء، نوم)',S.points.zikr],['وجه من القرآن',S.points.quran],['الوتر',S.points.witr],['آية الكرسي بعد كل صلاة',S.points.kursi]].map(x=>`<div class="li"><span>${x[0]}</span><em>${x[1]}</em></div>`).join('')}
+  ${[['الصلاة بالمسجد',S.points.mosque],['الصلاة بالبيت',S.points.home],['الصلاة متأخرة',S.points.late],['ورد أذكار (صباح، مساء، نوم)',S.points.zikr],['وجه من القرآن',S.points.quran],['الوتر',S.points.witr],['آية الكرسي بعد كل صلاة',S.points.kursi]].map(x=>`<div class="li"><span>${x[0]}</span><em>${x[1]}</em></div>`).join('')}
   </section>
-  <p class="hint" style="text-align:center">نسخة التطبيق 2.1</p>`;
+  <p class="hint" style="text-align:center">نسخة التطبيق 2.2</p>`;
 }
 async function saveSet(ev){
   ev.preventDefault();
