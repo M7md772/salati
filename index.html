@@ -265,6 +265,8 @@ input:disabled{opacity:.6}
 .login p{color:var(--mut);font-size:14px;margin-bottom:10px}
 .login .btn{margin-top:18px}
 .err{color:var(--missed);font-size:13px;margin-top:12px;min-height:18px}
+.seg button:active,.ck:active,.chk:active,.bnav button:active,.btn:active{transform:scale(.94);opacity:.8}
+button{transition:transform .08s}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -599,7 +601,8 @@ function vSet(){
   </form>
   <section class="panel"><div class="ph"><h2>نظام النقاط</h2><span class="muted">اليوم الكامل = ${S.goal.dayMax}</span></div>
   ${[['الصلاة بالمسجد',S.points.mosque],['الصلاة بالبيت',S.points.home],['الصلاة متأخرة',S.points.late],['صلاة فائتة',S.points.missed],['ورد أذكار (صباح، مساء، نوم)',S.points.zikr],['وجه من القرآن',S.points.quran],['الوتر',S.points.witr],['آية الكرسي بعد كل صلاة',S.points.kursi]].map(x=>`<div class="li"><span>${x[0]}</span><em>${x[1]}</em></div>`).join('')}
-  </section>`;
+  </section>
+  <p class="hint" style="text-align:center">نسخة التطبيق 2.1</p>`;
 }
 async function saveSet(ev){
   ev.preventDefault();
