@@ -341,8 +341,13 @@ function urlToken(){try{return Promise.resolve(new URLSearchParams(location.sear
 async function boot(){
   const ut=await urlToken(); if(ut){T=ut;ls('salati_t',ut)} else T=ls('salati_t');
   if(!T)return showLogin();
-  try{S=await call('apiState',null);render()}catch(e){if(!T)showLogin()}
+  const c=ls('salati_s');
+  if(c){try{S=JSON.parse(c);if(S&&S.ymd){if(S.today!==todayLocal())S=null;else render()}}catch(e){S=null}}
+  try{const r=await call('apiState',null);if(r&&!pending){setS(r);render()}}catch(e){if(!T)showLogin()}
 }
+function todayLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function setS(r){S=r;try{ls('salati_s',JSON.stringify(r))}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&T&&!pending)call('apiState',S&&S.today===todayLocal()?S.ymd:null).then(r=>{if(r&&!pending){setS(r);render()}}).catch(()=>{})});
 function showLogin(){
   $('#app').innerHTML=`<div class="login"><form class="box" onsubmit="login(event)">
   <div class="logo">${ICON.leaf}صلاتي</div><p>حافظ على صلاتك، وتنافس على الخير.</p>
@@ -354,10 +359,10 @@ function showLogin(){
 }
 async function login(ev){
   ev.preventDefault(); $('#err').textContent='';
-  try{const r=await run('apiLogin',$('#u').value,$('#p').value);T=r.token;ls('salati_t',T);S=await call('apiState',null);render()}
+  try{const r=await run('apiLogin',$('#u').value,$('#p').value);T=r.token;ls('salati_t',T);setS(await call('apiState',null));render()}
   catch(e){$('#err').textContent=errMsg(e)}
 }
-function logout(){ls('salati_t',null);T=null;S=null;showLogin()}
+function logout(){ls('salati_t',null);ls('salati_s',null);T=null;S=null;showLogin()}
 
 const NAVS=[['today','الرئيسية'],['month','الشهر'],['board','الترتيب'],['arch','الأرشيف'],['set','الإعدادات']];
 function render(){
@@ -470,20 +475,58 @@ function boardList(n){
     <div class="pts">${x.total}</div></div>`).join('');
 }
 function tgl(k){open[k]=!open[k];render()}
-async function day(d){try{const r=await call('apiState',d);if(r){S=r;render()}}catch(e){}}
+async function day(d){try{const r=await call('apiState',d);if(r){setS(r);render()}}catch(e){}}
 function afterLog(prev,neutral){
   const g=S.goal, d=S.month.total-prev;
   if(neutral)return toast(neutral);
   if(g.dayPoints>=g.dayMax)return toast('يوم كامل! انضافت لك نجمة');
   toast(`${d>=0?'+':''}${d} · باقي ${g.dayMax-g.dayPoints} لليوم الكامل`);
 }
-async function setP(k,s){
-  const cur=(S.entries['prayer|'+k]||{}).status, ns=cur===s?'none':s, b=S.month.total;
-  try{const r=await call('apiLog',S.ymd,'prayer',k,ns);if(!r)return;S=r;render();afterLog(b,ns==='none'?'تم الإلغاء':ns==='missed'?'الله يعوضك':null)}catch(e){}
+/* تحديث فوري على الشاشة، والحفظ في الخلفية */
+let pending=0, Q=Promise.resolve();
+function ptsFor(type,status){if(status==='none')return 0;return type==='prayer'?(S.points[status]||0):(S.points[type]||0)}
+function applyLocal(type,item,status){
+  const m=S.month, g=S.goal, key=type+'|'+item, old=S.entries[key];
+  let delta=-(old?old.points:0);
+  if(type==='prayer'&&old){m.prayers[old.status]=Math.max(0,(m.prayers[old.status]||0)-1);m.prayers.count=Math.max(0,m.prayers.count-1);m.prayers.points-=old.points}
+  if(type==='zikr'&&old){m.zikr[item]=Math.max(0,(m.zikr[item]||0)-1);m.zikr.count--;m.zikr.points-=old.points}
+  if(['quran','witr','kursi'].includes(type)&&old){m[type].count--;m[type].points-=old.points}
+  if(status==='none'){delete S.entries[key]}
+  else{
+    const p=ptsFor(type,status);delta+=p;
+    S.entries[key]={status:status,points:p,note:type==='quran'?String(S.user.quran_page):(old&&old.note)||''};
+    if(type==='prayer'){m.prayers[status]=(m.prayers[status]||0)+1;m.prayers.count++;m.prayers.points+=p}
+    if(type==='zikr'){m.zikr[item]=(m.zikr[item]||0)+1;m.zikr.count++;m.zikr.points+=p}
+    if(['quran','witr','kursi'].includes(type)){m[type].count++;m[type].points+=p}
+  }
+  if(type==='prayer'&&(status==='none'||status==='missed')&&S.entries['kursi|'+item]){const k=S.entries['kursi|'+item];delta-=k.points;m.kursi.count--;m.kursi.points-=k.points;delete S.entries['kursi|'+item]}
+  const wasFull=g.dayPoints>=g.dayMax;
+  g.dayPoints+=delta; m.total+=delta;
+  const isFull=g.dayPoints>=g.dayMax; if(isFull&&!wasFull)m.perfect=(m.perfect||0)+1; if(!isFull&&wasFull)m.perfect=Math.max(0,(m.perfect||0)-1);
+  const w=g.week.find(x=>x.ymd===S.ymd); if(w)w.points+=delta;
+  const me=S.board.find(x=>x.me); if(me){me.total+=delta;me.perfect=m.perfect}
+  const c=m.prayers.count||0;['mosque','home','late','missed'].forEach(s=>m.pct[s]=c?Math.round(m.prayers[s]*1000/c)/10:0);
+  m.pct.onTime=c?Math.round((m.prayers.mosque+m.prayers.home)*1000/c)/10:0;
+  return delta;
 }
-async function tog(type,item){
-  const on=S.entries[type+'|'+item], b=S.month.total;
-  try{const r=await call('apiLog',S.ymd,type,item,on?'none':'done');if(!r)return;S=r;render();afterLog(b,on?'تم الإلغاء':null)}catch(e){}
+function save(type,item,status,neutral){
+  const before=S.month.total, ymd=S.ymd;
+  applyLocal(type,item,status); render();
+  const d=S.month.total-before, g=S.goal;
+  if(neutral)toast(neutral); else if(g.dayPoints>=g.dayMax)toast('يوم كامل! انضافت لك نجمة'); else toast(`${d>=0?'+':''}${d} · باقي ${g.dayMax-g.dayPoints} لليوم الكامل`);
+  try{ls('salati_s',JSON.stringify(S))}catch(e){}
+  pending++; $('#bar').classList.add('on');
+  Q=Q.then(()=>run('apiLog',T,ymd,type,item,status)).then(r=>{pending--;if(!pending&&r&&r.ymd===S.ymd){setS(r);render()}})
+   .catch(e=>{pending--;const m=errMsg(e);if(m.includes('AUTH')){logout();return}toast('ما انحفظ: '+m);call('apiState',S.ymd).then(r=>{if(r){setS(r);render()}}).catch(()=>{})})
+   .finally(()=>{if(!pending)$('#bar').classList.remove('on')});
+}
+function setP(k,s){
+  const cur=(S.entries['prayer|'+k]||{}).status, ns=cur===s?'none':s;
+  save('prayer',k,ns,ns==='none'?'تم الإلغاء':ns==='missed'?'الله يعوضك':null);
+}
+function tog(type,item){
+  const on=S.entries[type+'|'+item];
+  save(type,item,on?'none':'done',on?'تم الإلغاء':null);
 }
 
 function vMonth(){
@@ -564,7 +607,7 @@ async function saveSet(ev){
   if(v==='other'){s.city=$('#s_oc').value.trim();s.country=$('#s_oco').value.trim();if(!s.city||!s.country)return toast('اكتب المدينة والدولة')}
   else{s.city=S.cities[+v][1];s.country='Saudi Arabia'}
   Object.keys(TK).forEach(k=>s[k]=$('#s_'+k).value);
-  try{const r=await call('apiSaveSettings',s);if(r){S=r;render();toast('تم الحفظ')}}catch(e){}
+  try{const r=await call('apiSaveSettings',s);if(r){setS(r);render();toast('تم الحفظ')}}catch(e){}
 }
 Object.assign(window,{login,logout,go,day,setP,tog,tgl,saveSet});
 boot();
